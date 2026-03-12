@@ -36,10 +36,3 @@ export async function DELETE() {
 
   return NextResponse.json({ success: true })
 }
-```
-
----
-
-Ajoute aussi la clé service role dans `.env.local` :
-```
-SUPABASE_SERVICE_ROLE_KEY=ta_clé_service_role
