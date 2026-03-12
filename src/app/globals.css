@@ -1,26 +1,24 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Taille de police */
+html.font-sm  { font-size: 14px; }
+html.font-md  { font-size: 16px; }
+html.font-lg  { font-size: 18px; }
+
+/* Réduire les animations */
+html.reduce-motion *,
+html.reduce-motion *::before,
+html.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+/* Contraste élevé — renforce les bordures et textes */
+html.high-contrast .border-gray-100 { border-color: #6b7280 !important; }
+html.high-contrast .border-gray-200 { border-color: #4b5563 !important; }
+html.high-contrast .text-gray-400   { color: #1f2937 !important; }
+html.high-contrast .text-gray-500   { color: #111827 !important; }
+html.high-contrast.dark .text-gray-400 { color: #e5e7eb !important; }
+html.high-contrast.dark .text-gray-500 { color: #f9fafb !important; }
+html.high-contrast.dark .border-gray-100 { border-color: #9ca3af !important; }

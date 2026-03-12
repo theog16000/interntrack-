@@ -5,6 +5,7 @@ import { Application, Interview } from '@/lib/types'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { CalendarCheck, Send, ClipboardList, Trophy } from 'lucide-react'
 
+
 const STATUS_CONFIG = {
   to_apply:  { label: 'À postuler', color: '#6366f1' },
   sent:      { label: 'Envoyé',     color: '#3b82f6' },
@@ -12,7 +13,6 @@ const STATUS_CONFIG = {
   offer:     { label: 'Offre',      color: '#22c55e' },
   rejected:  { label: 'Refus',      color: '#ef4444' },
 }
-
 export default function DashboardPage() {
   const [applications, setApplications] = useState<Application[]>([])
   const [interviews, setInterviews] = useState<Interview[]>([])
@@ -33,16 +33,18 @@ export default function DashboardPage() {
     fetchData()
   }, [])
 
-  // Données pour le graphique
   const chartData = Object.entries(STATUS_CONFIG).map(([key, config]) => ({
     name: config.label,
     value: applications.filter(a => a.status === key).length,
     color: config.color,
   })).filter(d => d.value > 0)
 
-  // Prochains entretiens
   const upcomingInterviews = interviews
-    .filter(i => i.status === 'scheduled' && new Date(i.interview_date) >= new Date())
+    .filter(i => {
+      if (i.status !== 'scheduled') return false
+      if (!i.interview_date) return false
+      return new Date(i.interview_date) >= new Date()
+    })
     .sort((a, b) => new Date(a.interview_date).getTime() - new Date(b.interview_date).getTime())
     .slice(0, 4)
 
@@ -78,6 +80,7 @@ export default function DashboardPage() {
   ]
 
   const formatDate = (dateStr: string) => {
+    if (!dateStr) return '—'
     return new Date(dateStr).toLocaleDateString('fr-FR', {
       day: 'numeric',
       month: 'short',
@@ -87,11 +90,11 @@ export default function DashboardPage() {
   }
 
   const interviewTypeLabel: Record<string, string> = {
-    phone: 'Téléphone',
-    video: 'Visio',
-    onsite: 'Présentiel',
+    phone:     'Téléphone',
+    video:     'Visio',
+    onsite:    'Présentiel',
     technical: 'Technique',
-    hr: 'RH',
+    hr:        'RH',
   }
 
   if (loading) {
@@ -159,12 +162,15 @@ export default function DashboardPage() {
                   </Pie>
                   <Tooltip
                     formatter={(value) => [value, '']}
-                    contentStyle={{ border: '1px solid #f3f4f6', borderRadius: '8px', fontSize: '12px' }}
+                    contentStyle={{
+                      border: '1px solid #f3f4f6',
+                      borderRadius: '8px',
+                      fontSize: '12px'
+                    }}
                   />
                 </PieChart>
               </ResponsiveContainer>
 
-              {/* Légende */}
               <div className="grid grid-cols-2 gap-2 mt-4">
                 {chartData.map((entry) => (
                   <div key={entry.name} className="flex items-center gap-2">
@@ -192,10 +198,11 @@ export default function DashboardPage() {
                 <div key={interview.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                   <div>
                     <p className="text-sm font-medium text-gray-900">
-                      {interview.applications?.company_name}
+                      {interview.applications?.company_name ?? '—'}
                     </p>
                     <p className="text-xs text-gray-400 mt-0.5">
-                      {interview.applications?.job_title} · {interviewTypeLabel[interview.type]}
+                      {interview.applications?.job_title ?? '—'}
+                      {interview.type && ` · ${interviewTypeLabel[interview.type] ?? interview.type}`}
                     </p>
                   </div>
                   <div className="text-right">
