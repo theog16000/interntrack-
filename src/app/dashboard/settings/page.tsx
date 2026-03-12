@@ -6,13 +6,12 @@ import {
   User, Mail, Lock, Trash2, Save,
   Eye, EyeOff, AlertTriangle, CheckCircle
 } from 'lucide-react'
-import { useTheme } from '@/lib/theme'
+
 const inputClass = "w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white"
 const labelClass = "block text-xs font-medium text-gray-700 mb-1.5"
 
 export default function SettingsPage() {
   const supabase = createClient()
-  const { theme, toggleDark, setFontSize, toggleHighContrast, toggleReduceMotion } = useTheme()
 
   const [user, setUser] = useState<{ email: string; id: string } | null>(null)
   const [loading, setLoading] = useState(true)
@@ -83,7 +82,6 @@ export default function SettingsPage() {
     }
 
     setSavingPassword(true)
-
     const { error } = await supabase.auth.updateUser({ password: newPassword })
 
     if (error) {
@@ -264,92 +262,7 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
-{/* Accessibilité */}
-<div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl p-6">
-  <div className="flex items-center gap-2 mb-5">
-    <div className="w-8 h-8 bg-indigo-50 dark:bg-indigo-950 rounded-lg flex items-center justify-center">
-      <Eye size={15} className="text-indigo-600 dark:text-indigo-400" />
-    </div>
-    <div>
-      <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Accessibilité</h2>
-      <p className="text-xs text-gray-400 dark:text-gray-500">Personnalise ton expérience</p>
-    </div>
-  </div>
 
-  <div className="space-y-4">
-
-    {/* Dark mode */}
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Mode sombre</p>
-        <p className="text-xs text-gray-400 dark:text-gray-500">Interface en thème sombre</p>
-      </div>
-      <button
-        type="button"
-        onClick={toggleDark}
-        className={`relative w-10 h-6 rounded-full transition-colors ${theme.dark ? 'bg-indigo-600' : 'bg-gray-200'}`}
-      >
-        <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${theme.dark ? 'translate-x-4' : 'translate-x-0'}`} />
-      </button>
-    </div>
-
-    {/* Contraste élevé */}
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Contraste élevé</p>
-        <p className="text-xs text-gray-400 dark:text-gray-500">Renforce les bordures et textes</p>
-      </div>
-      <button
-        type="button"
-        onClick={toggleHighContrast}
-        className={`relative w-10 h-6 rounded-full transition-colors ${theme.highContrast ? 'bg-indigo-600' : 'bg-gray-200'}`}
-      >
-        <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${theme.highContrast ? 'translate-x-4' : 'translate-x-0'}`} />
-      </button>
-    </div>
-
-    {/* Réduire animations */}
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Réduire les animations</p>
-        <p className="text-xs text-gray-400 dark:text-gray-500">Désactive les transitions</p>
-      </div>
-      <button
-        type="button"
-        onClick={toggleReduceMotion}
-        className={`relative w-10 h-6 rounded-full transition-colors ${theme.reduceMotion ? 'bg-indigo-600' : 'bg-gray-200'}`}
-      >
-        <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${theme.reduceMotion ? 'translate-x-4' : 'translate-x-0'}`} />
-      </button>
-    </div>
-
-    {/* Taille de police */}
-    <div>
-      <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Taille de police</p>
-      <div className="grid grid-cols-3 gap-2">
-        {([
-          { key: 'sm', label: 'Petite' },
-          { key: 'md', label: 'Normale' },
-          { key: 'lg', label: 'Grande' },
-        ] as const).map(f => (
-          <button
-            key={f.key}
-            type="button"
-            onClick={() => setFontSize(f.key)}
-            className={`py-2 rounded-lg text-xs font-medium transition-colors border ${
-              theme.fontSize === f.key
-                ? 'bg-indigo-600 text-white border-indigo-600'
-                : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
-    </div>
-
-  </div>
-</div>
           {/* Zone danger */}
           <div className="bg-white border border-red-100 rounded-xl p-6">
             <div className="flex items-center gap-2 mb-5">
