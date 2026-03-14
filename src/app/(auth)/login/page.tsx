@@ -3,9 +3,10 @@
 import { useState } from 'react'
 import { signIn } from '../actions'
 import Link from 'next/link'
+import { CheckCircle, XCircle } from 'lucide-react'
 
 export default function LoginPage() {
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError]     = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -13,7 +14,7 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
     const formData = new FormData(e.currentTarget)
-    const result = await signIn(formData)
+    const result   = await signIn(formData)
     if (result?.error) {
       setError(result.error)
       setLoading(false)
@@ -53,7 +54,17 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <p className="text-sm text-red-600">{error}</p>
+            <div className="flex items-center gap-2.5 px-4 py-3 bg-red-50 border border-red-200 rounded-xl">
+              <XCircle size={15} className="text-red-500 flex-shrink-0" />
+              <p className="text-sm text-red-700">
+                {error === 'Invalid login credentials'
+                  ? 'Email ou mot de passe incorrect'
+                  : error === 'Email not confirmed'
+                  ? 'Confirme ton email avant de te connecter'
+                  : error
+                }
+              </p>
+            </div>
           )}
 
           <button
@@ -61,7 +72,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full bg-indigo-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
           >
-            {loading ? 'Connexion...' : 'Se connecter'}
+            {loading ? 'Connexion en cours...' : 'Se connecter'}
           </button>
         </form>
 

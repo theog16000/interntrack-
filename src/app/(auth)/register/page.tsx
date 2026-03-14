@@ -3,9 +3,11 @@
 import { useState } from 'react'
 import { signUp } from '../actions'
 import Link from 'next/link'
+import { CheckCircle, XCircle, Mail } from 'lucide-react'
 
 export default function RegisterPage() {
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError]     = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -13,11 +15,40 @@ export default function RegisterPage() {
     setLoading(true)
     setError(null)
     const formData = new FormData(e.currentTarget)
-    const result = await signUp(formData)
+    const result   = await signUp(formData)
     if (result?.error) {
       setError(result.error)
       setLoading(false)
+    } else {
+      setSuccess(true)
+      setLoading(false)
     }
+  }
+
+  if (success) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="w-full max-w-sm px-6 text-center">
+          <div className="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <Mail size={28} className="text-green-500" />
+          </div>
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Vérifie ta boîte mail</h1>
+          <p className="text-gray-500 text-sm mb-6">
+            Un email de confirmation a été envoyé. Clique sur le lien pour activer ton compte.
+          </p>
+          <div className="flex items-center gap-2.5 px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-left mb-6">
+            <CheckCircle size={15} className="text-green-500 flex-shrink-0" />
+            <p className="text-sm text-green-700">Compte créé avec succès !</p>
+          </div>
+          <Link
+            href="/login"
+            className="block w-full bg-indigo-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors text-center"
+          >
+            Aller à la connexion
+          </Link>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -54,7 +85,15 @@ export default function RegisterPage() {
           </div>
 
           {error && (
-            <p className="text-sm text-red-600">{error}</p>
+            <div className="flex items-center gap-2.5 px-4 py-3 bg-red-50 border border-red-200 rounded-xl">
+              <XCircle size={15} className="text-red-500 flex-shrink-0" />
+              <p className="text-sm text-red-700">
+                {error === 'User already registered'
+                  ? 'Un compte existe déjà avec cet email'
+                  : error
+                }
+              </p>
+            </div>
           )}
 
           <button
