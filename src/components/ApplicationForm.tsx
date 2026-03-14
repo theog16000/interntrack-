@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Application } from '@/lib/types'
 import DocumentManager from '@/components/DocumentManager'
-import { X, Building2, Briefcase, Link, User, Calendar, FileText, ChevronDown } from 'lucide-react'
+import { X, Building2, Briefcase, Link, User, Calendar, FileText, ChevronDown, Wand2, Loader2 } from 'lucide-react'
 
 type Props = {
   onClose: () => void
@@ -23,24 +23,68 @@ const inputClass = "w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg te
 const labelClass = "block text-xs font-medium text-gray-700 mb-1.5"
 
 export default function ApplicationForm({ onClose, onSave, initial }: Props) {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'info' | 'documents'>('info')
+  const [loading, setLoading]       = useState(false)
+  const [error, setError]           = useState<string | null>(null)
+  const [activeTab, setActiveTab]   = useState<'info' | 'documents'>('info')
+
+  // Import IA
+  const [importUrl, setImportUrl]   = useState('')
+  const [importing, setImporting]   = useState(false)
+  const [importError, setImportError] = useState<string | null>(null)
+  const [imported, setImported]     = useState(false)
+
+  // Champs contrôlés pour le pré-remplissage
+  const [companyName, setCompanyName] = useState(initial?.company_name ?? '')
+  const [jobTitle, setJobTitle]       = useState(initial?.job_title ?? '')
+  const [offerUrl, setOfferUrl]       = useState(initial?.offer_url ?? '')
+  const [hrContact, setHrContact]     = useState(initial?.hr_contact ?? '')
+  const [notes, setNotes]             = useState(initial?.notes ?? '')
+  const [appliedAt, setAppliedAt]     = useState(initial?.applied_at ?? '')
+  const [status, setStatus]           = useState(initial?.status ?? 'to_apply')
+
+  async function handleImport() {
+    if (!importUrl) return
+    setImporting(true)
+    setImportError(null)
+    setImported(false)
+
+    const res  = await fetch('/api/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: importUrl }),
+    })
+    const data = await res.json()
+
+    if (!res.ok) {
+      setImportError(data.error ?? 'Erreur lors de l\'import')
+      setImporting(false)
+      return
+    }
+
+    // Pré-remplit les champs
+    if (data.company_name) setCompanyName(data.company_name)
+    if (data.job_title)    setJobTitle(data.job_title)
+    if (data.hr_contact)   setHrContact(data.hr_contact)
+    if (data.notes)        setNotes(data.notes)
+    setOfferUrl(importUrl)
+
+    setImported(true)
+    setImporting(false)
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setLoading(true)
     setError(null)
 
-    const formData = new FormData(e.currentTarget)
     const body = {
-      company_name: formData.get('company_name'),
-      job_title:    formData.get('job_title'),
-      offer_url:    formData.get('offer_url'),
-      hr_contact:   formData.get('hr_contact'),
-      notes:        formData.get('notes'),
-      applied_at:   formData.get('applied_at'),
-      status:       formData.get('status'),
+      company_name: companyName,
+      job_title:    jobTitle,
+      offer_url:    offerUrl,
+      hr_contact:   hrContact,
+      notes:        notes,
+      applied_at:   appliedAt,
+      status:       status,
     }
 
     const url    = initial ? `/api/applications/${initial.id}` : '/api/applications'
@@ -106,19 +150,72 @@ export default function ApplicationForm({ onClose, onSave, initial }: Props) {
           <form onSubmit={handleSubmit}>
             <div className="px-6 py-5 space-y-4">
 
+              {/* Import IA — seulement pour une nouvelle candidature */}
+              {!initial && (
+                <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Wand2 size={14} className="text-indigo-600" />
+                    <p className="text-xs font-medium text-indigo-700">Import automatique depuis une offre</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Link size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400 pointer-events-none" />
+                      <input
+                        type="url"
+                        value={importUrl}
+                        onChange={e => { setImportUrl(e.target.value); setImported(false); setImportError(null) }}
+                        placeholder="https://linkedin.com/jobs/..."
+                        className="w-full pl-8 pr-3 py-2 border border-indigo-200 rounded-lg text-xs text-gray-900 placeholder:text-indigo-300 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleImport}
+                      disabled={importing || !importUrl}
+                      className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors flex-shrink-0"
+                    >
+                      {importing
+                        ? <><Loader2 size={13} className="animate-spin" /> Analyse...</>
+                        : <><Wand2 size={13} /> Importer</>
+                      }
+                    </button>
+                  </div>
+                  {importError && (
+                    <p className="text-xs text-red-500">{importError}</p>
+                  )}
+                  {imported && (
+                    <p className="text-xs text-green-600 font-medium">Formulaire pré-rempli avec succès !</p>
+                  )}
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className={labelClass}>Entreprise <span className="text-red-400">*</span></label>
                   <div className="relative">
                     <Building2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                    <input name="company_name" required defaultValue={initial?.company_name ?? ''} placeholder="Google" className={inputClass} />
+                    <input
+                      name="company_name"
+                      required
+                      value={companyName}
+                      onChange={e => setCompanyName(e.target.value)}
+                      placeholder="Google"
+                      className={inputClass}
+                    />
                   </div>
                 </div>
                 <div>
                   <label className={labelClass}>Poste <span className="text-red-400">*</span></label>
                   <div className="relative">
                     <Briefcase size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                    <input name="job_title" required defaultValue={initial?.job_title ?? ''} placeholder="Stage Développeur" className={inputClass} />
+                    <input
+                      name="job_title"
+                      required
+                      value={jobTitle}
+                      onChange={e => setJobTitle(e.target.value)}
+                      placeholder="Stage Développeur"
+                      className={inputClass}
+                    />
                   </div>
                 </div>
               </div>
@@ -127,7 +224,12 @@ export default function ApplicationForm({ onClose, onSave, initial }: Props) {
                 <label className={labelClass}>Statut</label>
                 <div className="relative">
                   <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                  <select name="status" defaultValue={initial?.status ?? 'to_apply'} className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 appearance-none bg-white">
+                  <select
+                    name="status"
+                    value={status}
+onChange={e => setStatus(e.target.value as 'to_apply' | 'sent' | 'interview' | 'offer' | 'rejected')}
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 appearance-none bg-white"
+                  >
                     {STATUSES.map(s => (
                       <option key={s.value} value={s.value}>{s.label}</option>
                     ))}
@@ -139,7 +241,14 @@ export default function ApplicationForm({ onClose, onSave, initial }: Props) {
                 <label className={labelClass}>Lien de l'offre</label>
                 <div className="relative">
                   <Link size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                  <input name="offer_url" type="url" defaultValue={initial?.offer_url ?? ''} placeholder="https://..." className={inputClass} />
+                  <input
+                    name="offer_url"
+                    type="url"
+                    value={offerUrl}
+                    onChange={e => setOfferUrl(e.target.value)}
+                    placeholder="https://..."
+                    className={inputClass}
+                  />
                 </div>
               </div>
 
@@ -148,14 +257,26 @@ export default function ApplicationForm({ onClose, onSave, initial }: Props) {
                   <label className={labelClass}>Contact RH</label>
                   <div className="relative">
                     <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                    <input name="hr_contact" defaultValue={initial?.hr_contact ?? ''} placeholder="Marie Dupont" className={inputClass} />
+                    <input
+                      name="hr_contact"
+                      value={hrContact}
+                      onChange={e => setHrContact(e.target.value)}
+                      placeholder="Marie Dupont"
+                      className={inputClass}
+                    />
                   </div>
                 </div>
                 <div>
                   <label className={labelClass}>Date de candidature</label>
                   <div className="relative">
                     <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                    <input name="applied_at" type="date" defaultValue={initial?.applied_at ?? ''} className={inputClass} />
+                    <input
+                      name="applied_at"
+                      type="date"
+                      value={appliedAt}
+                      onChange={e => setAppliedAt(e.target.value)}
+                      className={inputClass}
+                    />
                   </div>
                 </div>
               </div>
@@ -164,7 +285,14 @@ export default function ApplicationForm({ onClose, onSave, initial }: Props) {
                 <label className={labelClass}>Notes</label>
                 <div className="relative">
                   <FileText size={14} className="absolute left-3 top-3 text-gray-400 pointer-events-none" />
-                  <textarea name="notes" defaultValue={initial?.notes ?? ''} rows={3} placeholder="Informations utiles, contexte, points à retenir..." className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none bg-white" />
+                  <textarea
+                    name="notes"
+                    value={notes}
+                    onChange={e => setNotes(e.target.value)}
+                    rows={3}
+                    placeholder="Informations utiles, contexte, points à retenir..."
+                    className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none bg-white"
+                  />
                 </div>
               </div>
 

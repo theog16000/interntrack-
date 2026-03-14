@@ -4,35 +4,30 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
-// INSCRIPTION
+// INSCRIPTION — ne redirige plus, retourne success pour afficher le message
 export async function signUp(formData: FormData) {
   const supabase = await createClient()
 
-  const email = formData.get('email') as string
+  const email    = formData.get('email') as string
   const password = formData.get('password') as string
 
   const { error } = await supabase.auth.signUp({ email, password })
 
-  if (error) {
-    return { error: error.message }
-  }
+  if (error) return { error: error.message }
 
-  revalidatePath('/', 'layout')
-  redirect('/dashboard')
+  return { success: true }
 }
 
-// CONNEXION
+// CONNEXION — redirige toujours, on ne peut pas afficher de toast
 export async function signIn(formData: FormData) {
   const supabase = await createClient()
 
-  const email = formData.get('email') as string
+  const email    = formData.get('email') as string
   const password = formData.get('password') as string
 
   const { error } = await supabase.auth.signInWithPassword({ email, password })
 
-  if (error) {
-    return { error: error.message }
-  }
+  if (error) return { error: error.message }
 
   revalidatePath('/', 'layout')
   redirect('/dashboard')
