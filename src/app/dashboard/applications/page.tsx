@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Application, COLUMNS, Status } from '@/lib/types'
 import ApplicationCard from '@/components/ApplicationCard'
 import ApplicationForm from '@/components/ApplicationForm'
+import ConfirmModal from '@/components/ConfirmModal'
 import { Plus, LayoutGrid, List, ArrowUpDown, Pencil, Trash2, ChevronUp, ChevronDown } from 'lucide-react'
 import { ToastContainer } from '@/components/Toast'
 import { useToast } from '@/lib/useToast'
@@ -11,12 +12,20 @@ import { useToast } from '@/lib/useToast'
 type SortKey = 'created_at' | 'company_name' | 'applied_at'
 type View = 'kanban' | 'list'
 
-const STATUS_BADGE: Record<Status, { label: string; className: string }> = {
-  to_apply:  { label: 'À postuler', className: 'bg-gray-100 text-gray-600'    },
-  sent:      { label: 'Envoyé',     className: 'bg-blue-100 text-blue-600'    },
-  interview: { label: 'Entretien',  className: 'bg-orange-100 text-orange-600'},
-  offer:     { label: 'Offre',      className: 'bg-green-100 text-green-600'  },
-  rejected:  { label: 'Refus',      className: 'bg-red-100 text-red-600'      },
+const STATUS_BADGE: Record<Status, string> = {
+  to_apply:  'bg-gray-100 text-gray-600',
+  sent:      'bg-blue-100 text-blue-600',
+  interview: 'bg-orange-100 text-orange-600',
+  offer:     'bg-green-100 text-green-600',
+  rejected:  'bg-red-100 text-red-600',
+}
+
+const STATUS_LABEL: Record<Status, string> = {
+  to_apply:  'A postuler',
+  sent:      'Envoye',
+  interview: 'Entretien',
+  offer:     'Offre',
+  rejected:  'Refus',
 }
 
 export default function ApplicationsPage() {
@@ -29,6 +38,7 @@ export default function ApplicationsPage() {
   const [view, setView]                 = useState<View>('kanban')
   const [sortKey, setSortKey]           = useState<SortKey>('created_at')
   const [sortAsc, setSortAsc]           = useState(false)
+  const [confirmId, setConfirmId]       = useState<string | null>(null)
   const { toasts, removeToast, toast }  = useToast()
 
   useEffect(() => {
@@ -66,24 +76,24 @@ export default function ApplicationsPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Supprimer cette candidature ?')) return
     const res = await fetch(`/api/applications/${id}`, { method: 'DELETE' })
     if (res.ok) {
       setApplications(prev => prev.filter(a => a.id !== id))
-      toast.success('Candidature supprimée')
+      toast.success('Candidature supprimee')
     } else {
       toast.error('Erreur lors de la suppression')
     }
+    setConfirmId(null)
   }
 
   function handleSave(updated: Application) {
     setApplications(prev => {
       const exists = prev.find(a => a.id === updated.id)
       if (exists) {
-        toast.success('Candidature mise à jour !')
+        toast.success('Candidature mise a jour !')
         return prev.map(a => a.id === updated.id ? updated : a)
       }
-      toast.success('Candidature ajoutée !')
+      toast.success('Candidature ajoutee !')
       return [updated, ...prev]
     })
   }
@@ -109,10 +119,10 @@ export default function ApplicationsPage() {
     if (res.ok) {
       const data = await res.json()
       setApplications(prev => prev.map(a => a.id === draggedId ? data : a))
-      toast.success(`Déplacé vers "${COLUMNS.find(c => c.id === status)?.label}"`)
+      toast.success(`Deplace vers "${COLUMNS.find(c => c.id === status)?.label}"`)
     } else {
       setApplications(prev => prev.map(a => a.id === draggedId ? { ...a, status: prevStatus! } : a))
-      toast.error('Erreur lors du déplacement')
+      toast.error('Erreur lors du deplacement')
     }
 
     setDraggedId(null)
@@ -130,7 +140,6 @@ export default function ApplicationsPage() {
   return (
     <div className="p-4 md:p-8">
 
-      {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-xl md:text-2xl font-semibold text-gray-900">Mes candidatures</h1>
@@ -139,8 +148,6 @@ export default function ApplicationsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-
-          {/* Tri desktop liste */}
           {view === 'list' && (
             <div className="hidden md:flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2">
               <ArrowUpDown size={14} className="text-gray-400" />
@@ -149,32 +156,23 @@ export default function ApplicationsPage() {
                 onChange={e => setSortKey(e.target.value as SortKey)}
                 className="text-sm text-gray-600 focus:outline-none bg-transparent"
               >
-                <option value="created_at">Date d'ajout</option>
+                <option value="created_at">Date ajout</option>
                 <option value="applied_at">Date candidature</option>
-                <option value="company_name">Entreprise (A-Z)</option>
+                <option value="company_name">Entreprise</option>
               </select>
               <button onClick={() => setSortAsc(!sortAsc)} className="text-gray-400 hover:text-gray-600 ml-1">
                 {sortAsc ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </button>
             </div>
           )}
-
-          {/* Toggle vue */}
           <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
-            <button
-              onClick={() => setView('kanban')}
-              className={`p-2 transition-colors ${view === 'kanban' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-400 hover:bg-gray-50'}`}
-            >
+            <button onClick={() => setView('kanban')} className={`p-2 transition-colors ${view === 'kanban' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-400 hover:bg-gray-50'}`}>
               <LayoutGrid size={15} />
             </button>
-            <button
-              onClick={() => setView('list')}
-              className={`p-2 transition-colors ${view === 'list' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-400 hover:bg-gray-50'}`}
-            >
+            <button onClick={() => setView('list')} className={`p-2 transition-colors ${view === 'list' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-400 hover:bg-gray-50'}`}>
               <List size={15} />
             </button>
           </div>
-
           <button
             onClick={() => { setEditingApp(null); setShowForm(true) }}
             className="flex items-center gap-1.5 bg-indigo-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
@@ -188,118 +186,111 @@ export default function ApplicationsPage() {
 
       {/* Vue Kanban */}
       {view === 'kanban' && (
-  <>
-    {/* Desktop — Kanban */}
-    <div className="hidden md:grid md:grid-cols-5 gap-3">
-      {COLUMNS.map(column => {
-        const colApps = getByStatus(column.id)
-        const isOver  = dragOverCol === column.id
-        return (
-          <div
-            key={column.id}
-            className={`${column.color} rounded-xl p-3 min-h-32 transition-all ${
-              isOver ? 'ring-2 ring-indigo-400 ring-offset-1' : ''
-            }`}
-            onDragOver={e => { e.preventDefault(); setDragOverCol(column.id) }}
-            onDragLeave={() => setDragOverCol(null)}
-            onDrop={() => handleDrop(column.id)}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xs font-medium text-gray-700">{column.label}</h2>
-              <span className="bg-white text-gray-500 text-xs font-medium px-2 py-0.5 rounded-full">
-                {colApps.length}
-              </span>
-            </div>
-            <div className="space-y-2">
-              {colApps.map(app => (
+        <>
+          {/* Desktop */}
+          <div className="hidden md:grid md:grid-cols-5 gap-3">
+            {COLUMNS.map(column => {
+              const colApps = getByStatus(column.id)
+              const isOver  = dragOverCol === column.id
+              return (
                 <div
-                  key={app.id}
-                  draggable
-                  onDragStart={() => setDraggedId(app.id)}
-                  onDragEnd={() => { setDraggedId(null); setDragOverCol(null) }}
-                  className={`cursor-grab active:cursor-grabbing transition-opacity ${
-                    draggedId === app.id ? 'opacity-40' : 'opacity-100'
-                  }`}
+                  key={column.id}
+                  className={`${column.color} rounded-xl p-3 min-h-32 transition-all ${isOver ? 'ring-2 ring-indigo-400 ring-offset-1' : ''}`}
+                  onDragOver={e => { e.preventDefault(); setDragOverCol(column.id) }}
+                  onDragLeave={() => setDragOverCol(null)}
+                  onDrop={() => handleDrop(column.id)}
                 >
-                  <ApplicationCard
-                    application={app}
-                    onDelete={handleDelete}
-                    onEdit={(app) => { setEditingApp(app); setShowForm(true) }}
-                  />
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-xs font-medium text-gray-700">{column.label}</h2>
+                    <span className="bg-white text-gray-500 text-xs font-medium px-2 py-0.5 rounded-full">{colApps.length}</span>
+                  </div>
+                  <div className="space-y-2">
+                    {colApps.map(app => (
+                      <div
+                        key={app.id}
+                        draggable
+                        onDragStart={() => setDraggedId(app.id)}
+                        onDragEnd={() => { setDraggedId(null); setDragOverCol(null) }}
+                        className={`cursor-grab active:cursor-grabbing transition-opacity ${draggedId === app.id ? 'opacity-40' : 'opacity-100'}`}
+                      >
+                        <ApplicationCard
+                          application={app}
+                          onDelete={(id) => setConfirmId(id)}
+                          onEdit={(app) => { setEditingApp(app); setShowForm(true) }}
+                        />
+                      </div>
+                    ))}
+                    {colApps.length === 0 && (
+                      <p className={`text-center text-xs py-8 transition-colors ${isOver ? 'text-indigo-400 font-medium' : 'text-gray-300'}`}>
+                        {isOver ? 'Deposer ici' : 'Glisse une carte ici'}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              ))}
-              {colApps.length === 0 && (
-                <p className={`text-center text-xs py-8 transition-colors ${
-                  isOver ? 'text-indigo-400 font-medium' : 'text-gray-300'
-                }`}>
-                  {isOver ? 'Deposer ici' : 'Glisse une carte ici'}
-                </p>
-              )}
-            </div>
+              )
+            })}
           </div>
-        )
-      })}
-    </div>
 
-    {/* Mobile — Liste par statut */}
-    <div className="md:hidden space-y-4">
-      {COLUMNS.map(column => {
-        const colApps = getByStatus(column.id)
-        if (colApps.length === 0) return null
-        return (
-          <div key={column.id}>
-            <div className="flex items-center gap-2 mb-2">
-              <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${STATUS_BADGE[column.id]}`}>
-                {column.label}
-              </span>
-              <span className="text-xs text-gray-400">{colApps.length}</span>
-            </div>
-            <div className="space-y-2">
-              {colApps.map(app => (
-                <div key={app.id} className="bg-white border border-gray-100 rounded-xl p-4">
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{app.company_name}</p>
+          {/* Mobile — liste par statut */}
+          <div className="md:hidden space-y-4">
+            {COLUMNS.map(column => {
+              const colApps = getByStatus(column.id)
+              if (colApps.length === 0) return null
+              return (
+                <div key={column.id}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${STATUS_BADGE[column.id]}`}>
+                      {column.label}
+                    </span>
+                    <span className="text-xs text-gray-400">{colApps.length}</span>
                   </div>
-                  <p className="text-xs text-gray-400 truncate mb-3">{app.job_title}</p>
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-gray-300">
-                      {app.applied_at ? new Date(app.applied_at).toLocaleDateString('fr-FR') : '—'}
-                    </p>
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => { setEditingApp(app); setShowForm(true) }}
-                        className="text-gray-400 hover:text-indigo-600 p-1.5 rounded-lg hover:bg-gray-50 transition-colors"
-                      >
-                        <Pencil size={13} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(app.id)}
-                        className="text-gray-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-gray-50 transition-colors"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
+                  <div className="space-y-2">
+                    {colApps.map(app => (
+                      <div key={app.id} className="bg-white border border-gray-100 rounded-xl p-4">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <p className="text-sm font-semibold text-gray-900 truncate">{app.company_name}</p>
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${STATUS_BADGE[app.status]}`}>
+                            {STATUS_LABEL[app.status]}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-400 truncate mb-3">{app.job_title}</p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-gray-300">
+                            {app.applied_at ? new Date(app.applied_at).toLocaleDateString('fr-FR') : '—'}
+                          </p>
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => { setEditingApp(app); setShowForm(true) }}
+                              className="text-gray-400 hover:text-indigo-600 p-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                            >
+                              <Pencil size={13} />
+                            </button>
+                            <button
+                              onClick={() => setConfirmId(app.id)}
+                              className="text-gray-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
+              )
+            })}
+            {applications.length === 0 && (
+              <div className="py-16 text-center">
+                <p className="text-gray-400 text-sm">Aucune candidature pour l'instant</p>
+              </div>
+            )}
           </div>
-        )
-      })}
-      {applications.length === 0 && (
-        <div className="py-16 text-center">
-          <p className="text-gray-400 text-sm">Aucune candidature pour l'instant</p>
-        </div>
+        </>
       )}
-    </div>
-  </>
-)}
 
       {/* Vue Liste */}
       {view === 'list' && (
         <div>
-
-          {/* Tri mobile */}
           <div className="flex items-center gap-2 mb-4 md:hidden overflow-x-auto pb-1">
             <span className="text-xs text-gray-500 flex-shrink-0">Trier :</span>
             {([
@@ -345,8 +336,8 @@ export default function ApplicationsPage() {
                   <p className="col-span-3 text-sm font-medium text-gray-900 truncate">{app.company_name}</p>
                   <p className="col-span-3 text-sm text-gray-500 truncate">{app.job_title}</p>
                   <div className="col-span-2">
-                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${STATUS_BADGE[app.status].className}`}>
-                      {STATUS_BADGE[app.status].label}
+                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${STATUS_BADGE[app.status]}`}>
+                      {STATUS_LABEL[app.status]}
                     </span>
                   </div>
                   <p className="col-span-2 text-sm text-gray-400">
@@ -358,7 +349,7 @@ export default function ApplicationsPage() {
                       <button onClick={() => { setEditingApp(app); setShowForm(true) }} className="text-gray-400 hover:text-indigo-600 p-1">
                         <Pencil size={13} />
                       </button>
-                      <button onClick={() => handleDelete(app.id)} className="text-gray-400 hover:text-red-500 p-1">
+                      <button onClick={() => setConfirmId(app.id)} className="text-gray-400 hover:text-red-500 p-1">
                         <Trash2 size={13} />
                       </button>
                     </div>
@@ -376,35 +367,25 @@ export default function ApplicationsPage() {
               </div>
             ) : (
               getSorted().map(app => (
-                <div
-                  key={app.id}
-                  className="bg-white border border-gray-100 rounded-xl p-4 active:scale-[0.99] transition-transform"
-                >
+                <div key={app.id} className="bg-white border border-gray-100 rounded-xl p-4 active:scale-[0.99] transition-transform">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold text-gray-900 truncate">{app.company_name}</p>
                       <p className="text-xs text-gray-400 truncate mt-0.5">{app.job_title}</p>
                     </div>
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${STATUS_BADGE[app.status].className}`}>
-                      {STATUS_BADGE[app.status].label}
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${STATUS_BADGE[app.status]}`}>
+                      {STATUS_LABEL[app.status]}
                     </span>
                   </div>
-
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
                     <p className="text-xs text-gray-300">
                       {app.applied_at ? new Date(app.applied_at).toLocaleDateString('fr-FR') : '—'}
                     </p>
                     <div className="flex gap-1">
-                      <button
-                        onClick={() => { setEditingApp(app); setShowForm(true) }}
-                        className="text-gray-400 hover:text-indigo-600 p-1.5 rounded-lg hover:bg-gray-50 transition-colors"
-                      >
+                      <button onClick={() => { setEditingApp(app); setShowForm(true) }} className="text-gray-400 hover:text-indigo-600 p-1.5 rounded-lg hover:bg-gray-50 transition-colors">
                         <Pencil size={14} />
                       </button>
-                      <button
-                        onClick={() => handleDelete(app.id)}
-                        className="text-gray-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-gray-50 transition-colors"
-                      >
+                      <button onClick={() => setConfirmId(app.id)} className="text-gray-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-gray-50 transition-colors">
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -417,10 +398,16 @@ export default function ApplicationsPage() {
       )}
 
       {showForm && (
-        <ApplicationForm
-          onClose={handleCloseForm}
-          onSave={handleSave}
-          initial={editingApp}
+        <ApplicationForm onClose={handleCloseForm} onSave={handleSave} initial={editingApp} />
+      )}
+
+      {confirmId && (
+        <ConfirmModal
+          title="Supprimer la candidature"
+          message="Cette action est irreversible. La candidature sera definitivement supprimee."
+          confirmLabel="Supprimer"
+          onConfirm={() => handleDelete(confirmId)}
+          onCancel={() => setConfirmId(null)}
         />
       )}
 

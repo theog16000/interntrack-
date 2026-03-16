@@ -5,10 +5,11 @@ import { Company } from '@/lib/types'
 import { Plus, Search, Building2, Globe, MapPin, Pencil, Trash2, X, ChevronDown } from 'lucide-react'
 import { ToastContainer } from '@/components/Toast'
 import { useToast } from '@/lib/useToast'
+import ConfirmModal from '@/components/ConfirmModal'
 
 const inputClass = "w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white"
 const labelClass = "block text-xs font-medium text-gray-700 mb-1.5"
-const SECTORS    = ['Tech', 'Finance', 'Santé', 'Éducation', 'Commerce', 'Industrie', 'Médias', 'Conseil', 'Autre']
+const SECTORS    = ['Tech', 'Finance', 'Sante', 'Education', 'Commerce', 'Industrie', 'Medias', 'Conseil', 'Autre']
 
 type CompanyFormProps = {
   onClose: () => void
@@ -44,20 +45,17 @@ function CompanyForm({ onClose, onSave, initial }: CompanyFormProps) {
     <div className="fixed inset-0 bg-black/30 flex items-end md:items-center justify-center z-50" onClick={onClose}>
       <div className="bg-white rounded-t-2xl md:rounded-2xl w-full md:max-w-lg shadow-xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
 
-        {/* Header fixe */}
         <div className="flex justify-between items-center px-5 py-4 border-b border-gray-100 flex-shrink-0">
-          <h2 className="text-base font-semibold text-gray-900">{initial ? "Modifier l'entreprise" : 'Nouvelle entreprise'}</h2>
+          <h2 className="text-base font-semibold text-gray-900">{initial ? "Modifier" : 'Nouvelle entreprise'}</h2>
           <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
             <X size={18} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-
-          {/* Contenu scrollable */}
           <div className="px-5 py-4 space-y-4 overflow-y-auto flex-1">
             <div>
-              <label className={labelClass}>Nom <span className="text-red-400">*</span></label>
+              <label className={labelClass}>Nom *</label>
               <div className="relative">
                 <Building2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                 <input name="name" required defaultValue={initial?.name ?? ''} placeholder="Nom de l'entreprise" className={inputClass} />
@@ -69,7 +67,7 @@ function CompanyForm({ onClose, onSave, initial }: CompanyFormProps) {
                 <div className="relative">
                   <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   <select name="sector" defaultValue={initial?.sector ?? ''} className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-indigo-500 appearance-none bg-white">
-                    <option value="">Sélectionne</option>
+                    <option value="">Selectionnez</option>
                     {SECTORS.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
@@ -95,12 +93,10 @@ function CompanyForm({ onClose, onSave, initial }: CompanyFormProps) {
             </div>
             {error && <p className="text-red-500 text-xs bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
           </div>
-
-          {/* Boutons toujours visibles */}
           <div className="flex gap-3 px-5 py-4 border-t border-gray-100 flex-shrink-0 bg-white">
             <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-600">Annuler</button>
             <button type="submit" disabled={loading} className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
-              {loading ? 'Sauvegarde...' : initial ? 'Mettre à jour' : 'Ajouter'}
+              {loading ? 'Sauvegarde...' : initial ? 'Mettre a jour' : 'Ajouter'}
             </button>
           </div>
         </form>
@@ -115,6 +111,7 @@ export default function CompaniesPage() {
   const [search, setSearch]            = useState('')
   const [showForm, setShowForm]        = useState(false)
   const [editing, setEditing]          = useState<Company | null>(null)
+  const [confirmId, setConfirmId]      = useState<string | null>(null)
   const { toasts, removeToast, toast } = useToast()
 
   useEffect(() => { setShowForm(false); setEditing(null); fetchCompanies() }, [])
@@ -127,17 +124,21 @@ export default function CompaniesPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Supprimer cette entreprise ?')) return
     const res = await fetch(`/api/companies/${id}`, { method: 'DELETE' })
-    if (res.ok) { setCompanies(prev => prev.filter(c => c.id !== id)); toast.success('Entreprise supprimée') }
-    else toast.error('Erreur lors de la suppression')
+    if (res.ok) {
+      setCompanies(prev => prev.filter(c => c.id !== id))
+      toast.success('Entreprise supprimee')
+    } else {
+      toast.error('Erreur lors de la suppression')
+    }
+    setConfirmId(null)
   }
 
   function handleSave(saved: Company) {
     setCompanies(prev => {
       const exists = prev.find(c => c.id === saved.id)
-      if (exists) { toast.success('Entreprise mise à jour !'); return prev.map(c => c.id === saved.id ? saved : c) }
-      toast.success('Entreprise ajoutée !')
+      if (exists) { toast.success('Entreprise mise a jour !'); return prev.map(c => c.id === saved.id ? saved : c) }
+      toast.success('Entreprise ajoutee !')
       return [saved, ...prev]
     })
   }
@@ -158,8 +159,6 @@ export default function CompaniesPage() {
 
   return (
     <div className="p-4 md:p-8">
-
-      {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-xl md:text-2xl font-semibold text-gray-900">Entreprises</h1>
@@ -175,7 +174,6 @@ export default function CompaniesPage() {
         </button>
       </div>
 
-      {/* Recherche */}
       <div className="relative mb-5">
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
         <input
@@ -187,14 +185,13 @@ export default function CompaniesPage() {
         />
       </div>
 
-      {/* Liste */}
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-4">
             <Building2 size={22} className="text-gray-400" />
           </div>
           <p className="text-gray-500 text-sm font-medium">Aucune entreprise</p>
-          <p className="text-gray-400 text-xs mt-1">Ajoute ta première entreprise</p>
+          <p className="text-gray-400 text-xs mt-1">Ajoute ta premiere entreprise</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
@@ -208,15 +205,13 @@ export default function CompaniesPage() {
                   <button onClick={() => { setEditing(company); setShowForm(true) }} className="text-gray-400 hover:text-indigo-600 p-1 rounded transition-colors">
                     <Pencil size={14} />
                   </button>
-                  <button onClick={() => handleDelete(company.id)} className="text-gray-400 hover:text-red-500 p-1 rounded transition-colors">
+                  <button onClick={() => setConfirmId(company.id)} className="text-gray-400 hover:text-red-500 p-1 rounded transition-colors">
                     <Trash2 size={14} />
                   </button>
                 </div>
               </div>
               <h3 className="font-semibold text-gray-900 text-sm mb-1">{company.name}</h3>
-              {company.sector && (
-                <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{company.sector}</span>
-              )}
+              {company.sector && <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{company.sector}</span>}
               <div className="mt-3 space-y-1.5">
                 {company.location && (
                   <div className="flex items-center gap-1.5 text-xs text-gray-400">
@@ -229,16 +224,22 @@ export default function CompaniesPage() {
                   </a>
                 )}
               </div>
-              {company.notes && (
-                <p className="text-xs text-gray-400 mt-3 line-clamp-2">{company.notes}</p>
-              )}
+              {company.notes && <p className="text-xs text-gray-400 mt-3 line-clamp-2">{company.notes}</p>}
             </div>
           ))}
         </div>
       )}
 
-      {showForm && (
-        <CompanyForm onClose={handleCloseForm} onSave={handleSave} initial={editing} />
+      {showForm && <CompanyForm onClose={handleCloseForm} onSave={handleSave} initial={editing} />}
+
+      {confirmId && (
+        <ConfirmModal
+          title="Supprimer l'entreprise"
+          message="Cette entreprise sera definitivement supprimee."
+          confirmLabel="Supprimer"
+          onConfirm={() => handleDelete(confirmId)}
+          onCancel={() => setConfirmId(null)}
+        />
       )}
 
       <ToastContainer toasts={toasts} onRemove={removeToast} />

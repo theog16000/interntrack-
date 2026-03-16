@@ -6,6 +6,7 @@ import { FileText, Upload, Trash2, Download, File, FileBadge, Paperclip } from '
 import { ToastContainer } from '@/components/Toast'
 import { useToast } from '@/lib/useToast'
 import DocumentViewer from '@/components/DocumentViewer'
+import ConfirmModal from '@/components/ConfirmModal'
 
 const FILE_TYPE_CONFIG = {
   cv:           { label: 'CV',               icon: FileBadge,  className: 'bg-indigo-50 text-indigo-600' },
@@ -19,6 +20,7 @@ export default function DocumentsPage() {
   const [uploading, setUploading]      = useState(false)
   const [filter, setFilter]            = useState<'all' | 'cv' | 'cover_letter' | 'other'>('all')
   const [viewerIndex, setViewerIndex]  = useState<number | null>(null)
+  const [confirmId, setConfirmId]      = useState<string | null>(null)
   const { toasts, removeToast, toast } = useToast()
 
   useEffect(() => { fetchDocuments() }, [])
@@ -47,7 +49,7 @@ export default function DocumentsPage() {
       toast.error(data.error ?? "Erreur lors de l'upload")
     } else {
       setDocuments(prev => [data, ...prev])
-      toast.success('Document ajouté !')
+      toast.success('Document ajoute !')
     }
     setUploading(false)
     e.target.value = ''
@@ -58,26 +60,26 @@ export default function DocumentsPage() {
     const data = await res.json()
     if (data.url) {
       window.open(data.url, '_blank')
-      toast.info('Téléchargement en cours...')
+      toast.info('Telechargement en cours...')
     } else {
-      toast.error('Impossible de télécharger')
+      toast.error('Impossible de telecharger')
     }
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Supprimer ce document ?')) return
     const res = await fetch(`/api/documents/${id}`, { method: 'DELETE' })
     if (res.ok) {
       setDocuments(prev => prev.filter(d => d.id !== id))
-      toast.success('Document supprimé')
+      toast.success('Document supprime')
     } else {
       toast.error('Erreur lors de la suppression')
     }
+    setConfirmId(null)
   }
 
   function handleDeleteFromViewer(id: string) {
     setDocuments(prev => prev.filter(d => d.id !== id))
-    toast.success('Document supprimé')
+    toast.success('Document supprime')
   }
 
   const filtered   = filter === 'all' ? documents : documents.filter(d => d.file_type === filter)
@@ -93,7 +95,6 @@ export default function DocumentsPage() {
   return (
     <div className="p-4 md:p-8">
 
-      {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-xl md:text-2xl font-semibold text-gray-900">Mes documents</h1>
@@ -105,17 +106,10 @@ export default function DocumentsPage() {
           <Upload size={15} />
           <span className="hidden sm:inline">{uploading ? 'Upload...' : 'Ajouter un document'}</span>
           <span className="sm:hidden">{uploading ? '...' : 'Ajouter'}</span>
-          <input
-            type="file"
-            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-            onChange={handleUpload}
-            disabled={uploading}
-            className="hidden"
-          />
+          <input type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" onChange={handleUpload} disabled={uploading} className="hidden" />
         </label>
       </div>
 
-      {/* Filtres */}
       <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
         {([
           { key: 'all',          label: 'Tous'    },
@@ -148,7 +142,7 @@ export default function DocumentsPage() {
         </div>
       ) : (
         <>
-          {/* Vue mobile — cartes */}
+          {/* Mobile */}
           <div className="md:hidden space-y-2">
             {filtered.map((doc, i) => {
               const config = FILE_TYPE_CONFIG[doc.file_type]
@@ -169,18 +163,11 @@ export default function DocumentsPage() {
                       <span className="text-xs text-gray-400">{formatDate(doc.created_at)}</span>
                     </div>
                   </div>
-                  {/* Actions rapides */}
                   <div className="flex gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
-                    <button
-                      onClick={() => handleDownload(doc.id)}
-                      className="text-gray-400 hover:text-indigo-600 p-2 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
+                    <button onClick={() => handleDownload(doc.id)} className="text-gray-400 hover:text-indigo-600 p-2 rounded-lg hover:bg-gray-50 transition-colors">
                       <Download size={15} />
                     </button>
-                    <button
-                      onClick={() => handleDelete(doc.id)}
-                      className="text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
+                    <button onClick={() => setConfirmId(doc.id)} className="text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-gray-50 transition-colors">
                       <Trash2 size={15} />
                     </button>
                   </div>
@@ -189,13 +176,13 @@ export default function DocumentsPage() {
             })}
           </div>
 
-          {/* Vue desktop — tableau */}
+          {/* Desktop */}
           <div className="hidden md:block bg-white border border-gray-100 rounded-xl overflow-hidden">
             <div className="grid grid-cols-12 gap-4 px-5 py-3 border-b border-gray-100 bg-gray-50">
               <p className="col-span-5 text-xs font-medium text-gray-500">Nom</p>
               <p className="col-span-2 text-xs font-medium text-gray-500">Type</p>
               <p className="col-span-2 text-xs font-medium text-gray-500">Format</p>
-              <p className="col-span-2 text-xs font-medium text-gray-500">Ajouté le</p>
+              <p className="col-span-2 text-xs font-medium text-gray-500">Ajoute le</p>
               <p className="col-span-1"></p>
             </div>
             {filtered.map((doc, i) => {
@@ -214,28 +201,15 @@ export default function DocumentsPage() {
                     <p className="text-sm font-medium text-gray-900 truncate">{doc.name}</p>
                   </div>
                   <div className="col-span-2">
-                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${config.className}`}>
-                      {config.label}
-                    </span>
+                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${config.className}`}>{config.label}</span>
                   </div>
                   <p className="col-span-2 text-xs text-gray-400 font-mono">{formatExt(doc.name)}</p>
                   <p className="col-span-2 text-sm text-gray-400">{formatDate(doc.created_at)}</p>
-                  <div
-                    className="col-span-1 flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={e => e.stopPropagation()}
-                  >
-                    <button
-                      onClick={() => handleDownload(doc.id)}
-                      className="text-gray-400 hover:text-indigo-600 p-1 rounded transition-colors"
-                      title="Télécharger"
-                    >
+                  <div className="col-span-1 flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+                    <button onClick={() => handleDownload(doc.id)} className="text-gray-400 hover:text-indigo-600 p-1 rounded transition-colors">
                       <Download size={14} />
                     </button>
-                    <button
-                      onClick={() => handleDelete(doc.id)}
-                      className="text-gray-400 hover:text-red-500 p-1 rounded transition-colors"
-                      title="Supprimer"
-                    >
+                    <button onClick={() => setConfirmId(doc.id)} className="text-gray-400 hover:text-red-500 p-1 rounded transition-colors">
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -246,13 +220,22 @@ export default function DocumentsPage() {
         </>
       )}
 
-      {/* Visionneuse */}
       {viewerIndex !== null && (
         <DocumentViewer
           documents={filtered}
           initialIndex={viewerIndex}
           onClose={() => setViewerIndex(null)}
           onDelete={handleDeleteFromViewer}
+        />
+      )}
+
+      {confirmId && (
+        <ConfirmModal
+          title="Supprimer le document"
+          message="Le fichier sera definitivement supprime et ne pourra pas etre recupere."
+          confirmLabel="Supprimer"
+          onConfirm={() => handleDelete(confirmId)}
+          onCancel={() => setConfirmId(null)}
         />
       )}
 
