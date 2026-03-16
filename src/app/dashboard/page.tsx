@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react'
 import { Application, Interview } from '@/lib/types'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
-import { CalendarCheck, Send, ClipboardList, Trophy } from 'lucide-react'
-
+import { CalendarCheck, Send, ClipboardList, Trophy, Settings, LogOut } from 'lucide-react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { signOut } from '@/app/(auth)/actions'
 
 const STATUS_CONFIG = {
   to_apply:  { label: 'À postuler', color: '#6366f1' },
@@ -13,10 +15,12 @@ const STATUS_CONFIG = {
   offer:     { label: 'Offre',      color: '#22c55e' },
   rejected:  { label: 'Refus',      color: '#ef4444' },
 }
+
 export default function DashboardPage() {
   const [applications, setApplications] = useState<Application[]>([])
-  const [interviews, setInterviews] = useState<Interview[]>([])
-  const [loading, setLoading] = useState(true)
+  const [interviews, setInterviews]     = useState<Interview[]>([])
+  const [loading, setLoading]           = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
     async function fetchData() {
@@ -40,61 +44,29 @@ export default function DashboardPage() {
   })).filter(d => d.value > 0)
 
   const upcomingInterviews = interviews
-    .filter(i => {
-      if (i.status !== 'scheduled') return false
-      if (!i.interview_date) return false
-      return new Date(i.interview_date) >= new Date()
-    })
+    .filter(i => i.status === 'scheduled' && i.interview_date && new Date(i.interview_date) >= new Date())
     .sort((a, b) => new Date(a.interview_date).getTime() - new Date(b.interview_date).getTime())
     .slice(0, 4)
 
   const stats = [
-    {
-      label: 'Total candidatures',
-      value: applications.length,
-      icon: ClipboardList,
-      color: 'text-indigo-600',
-      bg: 'bg-indigo-50',
-    },
-    {
-      label: 'Envoyées',
-      value: applications.filter(a => a.status === 'sent').length,
-      icon: Send,
-      color: 'text-blue-600',
-      bg: 'bg-blue-50',
-    },
-    {
-      label: 'Entretiens',
-      value: applications.filter(a => a.status === 'interview').length,
-      icon: CalendarCheck,
-      color: 'text-orange-600',
-      bg: 'bg-orange-50',
-    },
-    {
-      label: 'Offres reçues',
-      value: applications.filter(a => a.status === 'offer').length,
-      icon: Trophy,
-      color: 'text-green-600',
-      bg: 'bg-green-50',
-    },
+    { label: 'Total',      value: applications.length,                                    icon: ClipboardList, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { label: 'Envoyées',   value: applications.filter(a => a.status === 'sent').length,   icon: Send,          color: 'text-blue-600',   bg: 'bg-blue-50'   },
+    { label: 'Entretiens', value: applications.filter(a => a.status === 'interview').length, icon: CalendarCheck, color: 'text-orange-600', bg: 'bg-orange-50' },
+    { label: 'Offres',     value: applications.filter(a => a.status === 'offer').length,  icon: Trophy,        color: 'text-green-600',  bg: 'bg-green-50'  },
   ]
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '—'
-    return new Date(dateStr).toLocaleDateString('fr-FR', {
-      day: 'numeric',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
+    return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
   }
 
   const interviewTypeLabel: Record<string, string> = {
-    phone:     'Téléphone',
-    video:     'Visio',
-    onsite:    'Présentiel',
-    technical: 'Technique',
-    hr:        'RH',
+    phone: 'Téléphone', video: 'Visio', onsite: 'Présentiel', technical: 'Technique', hr: 'RH',
+  }
+
+  async function handleSignOut() {
+    await signOut()
+    router.push('/login')
   }
 
   if (loading) {
@@ -106,75 +78,69 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
 
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-gray-900">Tableau de bord</h1>
-        <p className="text-gray-400 text-sm mt-1">Vue d'ensemble de tes candidatures</p>
+      {/* Header mobile */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-xl md:text-2xl font-semibold text-gray-900">Tableau de bord</h1>
+          <p className="text-gray-400 text-xs md:text-sm mt-0.5">Vue d'ensemble de tes candidatures</p>
+        </div>
+        {/* Actions mobile */}
+        <div className="flex items-center gap-2 md:hidden">
+          <Link href="/dashboard/settings" className="p-2 rounded-xl bg-gray-100 text-gray-500">
+            <Settings size={18} />
+          </Link>
+          <button onClick={handleSignOut} className="p-2 rounded-xl bg-gray-100 text-gray-500">
+            <LogOut size={18} />
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
         {stats.map((stat) => {
           const Icon = stat.icon
           return (
-            <div key={stat.label} className="bg-white border border-gray-100 rounded-xl p-5">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm text-gray-500">{stat.label}</span>
-                <div className={`${stat.bg} p-2 rounded-lg`}>
-                  <Icon size={16} className={stat.color} />
+            <div key={stat.label} className="bg-white border border-gray-100 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-gray-500">{stat.label}</span>
+                <div className={`${stat.bg} p-1.5 rounded-lg`}>
+                  <Icon size={14} className={stat.color} />
                 </div>
               </div>
-              <p className="text-3xl font-semibold text-gray-900">{stat.value}</p>
+              <p className="text-2xl md:text-3xl font-semibold text-gray-900">{stat.value}</p>
             </div>
           )
         })}
       </div>
 
       {/* Graphique + Entretiens */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
 
         {/* Graphique */}
-        <div className="bg-white border border-gray-100 rounded-xl p-6">
-          <h2 className="text-sm font-medium text-gray-900 mb-6">Répartition par statut</h2>
-
+        <div className="bg-white border border-gray-100 rounded-xl p-5">
+          <h2 className="text-sm font-medium text-gray-900 mb-4">Répartition par statut</h2>
           {applications.length === 0 ? (
-            <div className="flex items-center justify-center h-48">
+            <div className="flex items-center justify-center h-40">
               <p className="text-gray-400 text-sm">Aucune candidature pour l'instant</p>
             </div>
           ) : (
             <>
-              <ResponsiveContainer width="100%" height={200}>
+              <ResponsiveContainer width="100%" height={180}>
                 <PieChart>
-                  <Pie
-                    data={chartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
-                    dataKey="value"
-                    strokeWidth={0}
-                  >
+                  <Pie data={chartData} cx="50%" cy="50%" innerRadius={50} outerRadius={75} dataKey="value" strokeWidth={0}>
                     {chartData.map((entry, index) => (
                       <Cell key={index} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip
-                    formatter={(value) => [value, '']}
-                    contentStyle={{
-                      border: '1px solid #f3f4f6',
-                      borderRadius: '8px',
-                      fontSize: '12px'
-                    }}
-                  />
+                  <Tooltip formatter={(value) => [value, '']} contentStyle={{ border: '1px solid #f3f4f6', borderRadius: '8px', fontSize: '12px' }} />
                 </PieChart>
               </ResponsiveContainer>
-
-              <div className="grid grid-cols-2 gap-2 mt-4">
+              <div className="grid grid-cols-2 gap-2 mt-3">
                 {chartData.map((entry) => (
                   <div key={entry.name} className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: entry.color }} />
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: entry.color }} />
                     <span className="text-xs text-gray-500">{entry.name}</span>
                     <span className="text-xs font-medium text-gray-900 ml-auto">{entry.value}</span>
                   </div>
@@ -185,37 +151,29 @@ export default function DashboardPage() {
         </div>
 
         {/* Prochains entretiens */}
-        <div className="bg-white border border-gray-100 rounded-xl p-6">
-          <h2 className="text-sm font-medium text-gray-900 mb-6">Prochains entretiens</h2>
-
+        <div className="bg-white border border-gray-100 rounded-xl p-5">
+          <h2 className="text-sm font-medium text-gray-900 mb-4">Prochains entretiens</h2>
           {upcomingInterviews.length === 0 ? (
-            <div className="flex items-center justify-center h-48">
+            <div className="flex items-center justify-center h-40">
               <p className="text-gray-400 text-sm">Aucun entretien planifié</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {upcomingInterviews.map((interview) => (
                 <div key={interview.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      {interview.applications?.company_name ?? '—'}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{interview.applications?.company_name ?? '—'}</p>
+                    <p className="text-xs text-gray-400 truncate">
                       {interview.applications?.job_title ?? '—'}
                       {interview.type && ` · ${interviewTypeLabel[interview.type] ?? interview.type}`}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs font-medium text-indigo-600">
-                      {formatDate(interview.interview_date)}
-                    </p>
-                  </div>
+                  <p className="text-xs font-medium text-indigo-600 flex-shrink-0 ml-3">{formatDate(interview.interview_date)}</p>
                 </div>
               ))}
             </div>
           )}
         </div>
-
       </div>
     </div>
   )

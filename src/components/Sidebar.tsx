@@ -26,7 +26,7 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="w-56 h-screen flex flex-col border-r border-gray-100 bg-white px-3 py-5 fixed left-0 top-0">
+    <aside className="hidden md:flex w-56 h-screen flex-col border-r border-gray-100 bg-white px-3 py-5 fixed left-0 top-0">
 
       <div className="px-3 mb-8">
         <h1 className="text-base font-bold text-gray-900">InternTrack</h1>

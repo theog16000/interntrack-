@@ -8,12 +8,11 @@ import { useToast } from '@/lib/useToast'
 
 const inputClass = "w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white"
 const labelClass = "block text-xs font-medium text-gray-700 mb-1.5"
-
-const SECTORS = ['Tech', 'Finance', 'Santé', 'Éducation', 'Commerce', 'Industrie', 'Médias', 'Conseil', 'Autre']
+const SECTORS    = ['Tech', 'Finance', 'Santé', 'Éducation', 'Commerce', 'Industrie', 'Médias', 'Conseil', 'Autre']
 
 type CompanyFormProps = {
   onClose: () => void
-  onSave: (company: Company) => void
+  onSave:  (company: Company) => void
   initial?: Company | null
 }
 
@@ -24,8 +23,6 @@ function CompanyForm({ onClose, onSave, initial }: CompanyFormProps) {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setLoading(true)
-    setError(null)
-
     const formData = new FormData(e.currentTarget)
     const body = {
       name:     formData.get('name'),
@@ -34,34 +31,31 @@ function CompanyForm({ onClose, onSave, initial }: CompanyFormProps) {
       location: formData.get('location'),
       notes:    formData.get('notes'),
     }
-
     const url    = initial ? `/api/companies/${initial.id}` : '/api/companies'
     const method = initial ? 'PATCH' : 'POST'
-
-    const res  = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
-    const data = await res.json()
-
+    const res    = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    const data   = await res.json()
     if (!res.ok) { setError(data.error); setLoading(false); return }
-
     onSave(data)
     onClose()
   }
 
   return (
-    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl" onClick={e => e.stopPropagation()}>
-        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
-          <h2 className="text-base font-semibold text-gray-900">{initial ? 'Modifier l\'entreprise' : 'Nouvelle entreprise'}</h2>
+    <div className="fixed inset-0 bg-black/30 flex items-end md:items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-white rounded-t-2xl md:rounded-2xl w-full md:max-w-lg shadow-xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+
+        {/* Header fixe */}
+        <div className="flex justify-between items-center px-5 py-4 border-b border-gray-100 flex-shrink-0">
+          <h2 className="text-base font-semibold text-gray-900">{initial ? "Modifier l'entreprise" : 'Nouvelle entreprise'}</h2>
           <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
             <X size={18} />
           </button>
         </div>
-        <form onSubmit={handleSubmit}>
-          <div className="px-6 py-5 space-y-4">
+
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+
+          {/* Contenu scrollable */}
+          <div className="px-5 py-4 space-y-4 overflow-y-auto flex-1">
             <div>
               <label className={labelClass}>Nom <span className="text-red-400">*</span></label>
               <div className="relative">
@@ -74,7 +68,7 @@ function CompanyForm({ onClose, onSave, initial }: CompanyFormProps) {
                 <label className={labelClass}>Secteur</label>
                 <div className="relative">
                   <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                  <select name="sector" defaultValue={initial?.sector ?? ''} className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 appearance-none bg-white">
+                  <select name="sector" defaultValue={initial?.sector ?? ''} className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-indigo-500 appearance-none bg-white">
                     <option value="">Sélectionne</option>
                     {SECTORS.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
@@ -84,7 +78,7 @@ function CompanyForm({ onClose, onSave, initial }: CompanyFormProps) {
                 <label className={labelClass}>Localisation</label>
                 <div className="relative">
                   <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                  <input name="location" defaultValue={initial?.location ?? ''} placeholder="Paris, France" className={inputClass} />
+                  <input name="location" defaultValue={initial?.location ?? ''} placeholder="Paris" className={inputClass} />
                 </div>
               </div>
             </div>
@@ -97,13 +91,15 @@ function CompanyForm({ onClose, onSave, initial }: CompanyFormProps) {
             </div>
             <div>
               <label className={labelClass}>Notes</label>
-              <textarea name="notes" defaultValue={initial?.notes ?? ''} rows={3} placeholder="Informations utiles..." className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none bg-white" />
+              <textarea name="notes" defaultValue={initial?.notes ?? ''} rows={3} placeholder="Informations utiles..." className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-indigo-500 resize-none bg-white" />
             </div>
             {error && <p className="text-red-500 text-xs bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
           </div>
-          <div className="flex gap-3 px-6 py-4 border-t border-gray-100">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">Annuler</button>
-            <button type="submit" disabled={loading} className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+
+          {/* Boutons toujours visibles */}
+          <div className="flex gap-3 px-5 py-4 border-t border-gray-100 flex-shrink-0 bg-white">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-600">Annuler</button>
+            <button type="submit" disabled={loading} className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
               {loading ? 'Sauvegarde...' : initial ? 'Mettre à jour' : 'Ajouter'}
             </button>
           </div>
@@ -114,18 +110,14 @@ function CompanyForm({ onClose, onSave, initial }: CompanyFormProps) {
 }
 
 export default function CompaniesPage() {
-  const [companies, setCompanies]       = useState<Company[]>([])
-  const [loading, setLoading]           = useState(true)
-  const [search, setSearch]             = useState('')
-  const [showForm, setShowForm]         = useState(false)
-  const [editing, setEditing]           = useState<Company | null>(null)
-  const { toasts, removeToast, toast }  = useToast()
+  const [companies, setCompanies]      = useState<Company[]>([])
+  const [loading, setLoading]          = useState(true)
+  const [search, setSearch]            = useState('')
+  const [showForm, setShowForm]        = useState(false)
+  const [editing, setEditing]          = useState<Company | null>(null)
+  const { toasts, removeToast, toast } = useToast()
 
-  useEffect(() => {
-    setShowForm(false)
-    setEditing(null)
-    fetchCompanies()
-  }, [])
+  useEffect(() => { setShowForm(false); setEditing(null); fetchCompanies() }, [])
 
   async function fetchCompanies() {
     const res  = await fetch('/api/companies')
@@ -137,30 +129,20 @@ export default function CompaniesPage() {
   async function handleDelete(id: string) {
     if (!confirm('Supprimer cette entreprise ?')) return
     const res = await fetch(`/api/companies/${id}`, { method: 'DELETE' })
-    if (res.ok) {
-      setCompanies(prev => prev.filter(c => c.id !== id))
-      toast.success('Entreprise supprimée')
-    } else {
-      toast.error('Erreur lors de la suppression')
-    }
+    if (res.ok) { setCompanies(prev => prev.filter(c => c.id !== id)); toast.success('Entreprise supprimée') }
+    else toast.error('Erreur lors de la suppression')
   }
 
   function handleSave(saved: Company) {
     setCompanies(prev => {
       const exists = prev.find(c => c.id === saved.id)
-      if (exists) {
-        toast.success('Entreprise mise à jour !')
-        return prev.map(c => c.id === saved.id ? saved : c)
-      }
+      if (exists) { toast.success('Entreprise mise à jour !'); return prev.map(c => c.id === saved.id ? saved : c) }
       toast.success('Entreprise ajoutée !')
       return [saved, ...prev]
     })
   }
 
-  function handleCloseForm() {
-    setShowForm(false)
-    setEditing(null)
-  }
+  function handleCloseForm() { setShowForm(false); setEditing(null) }
 
   const filtered = companies.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -168,41 +150,44 @@ export default function CompaniesPage() {
     c.location?.toLowerCase().includes(search.toLowerCase())
   )
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-400 text-sm">Chargement...</p>
-      </div>
-    )
-  }
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <p className="text-gray-400 text-sm">Chargement...</p>
+    </div>
+  )
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-4 md:p-8">
+
+      {/* Header */}
+      <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Entreprises</h1>
-          <p className="text-gray-400 text-sm mt-1">{companies.length} entreprise{companies.length > 1 ? 's' : ''}</p>
+          <h1 className="text-xl md:text-2xl font-semibold text-gray-900">Entreprises</h1>
+          <p className="text-gray-400 text-xs md:text-sm mt-0.5">{companies.length} entreprise{companies.length > 1 ? 's' : ''}</p>
         </div>
         <button
           onClick={() => { setEditing(null); setShowForm(true) }}
-          className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+          className="flex items-center gap-1.5 bg-indigo-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
         >
-          <Plus size={16} />
-          Nouvelle entreprise
+          <Plus size={15} />
+          <span className="hidden sm:inline">Nouvelle entreprise</span>
+          <span className="sm:hidden">Nouveau</span>
         </button>
       </div>
 
-      <div className="relative mb-6">
+      {/* Recherche */}
+      <div className="relative mb-5">
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
         <input
           type="text"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Rechercher une entreprise..."
-          className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white"
+          placeholder="Rechercher..."
+          className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-indigo-500 bg-white"
         />
       </div>
 
+      {/* Liste */}
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-4">
@@ -212,14 +197,14 @@ export default function CompaniesPage() {
           <p className="text-gray-400 text-xs mt-1">Ajoute ta première entreprise</p>
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
           {filtered.map(company => (
-            <div key={company.id} className="bg-white border border-gray-100 rounded-xl p-5 hover:shadow-sm transition-all group">
+            <div key={company.id} className="bg-white border border-gray-100 rounded-xl p-4 hover:shadow-sm transition-all">
               <div className="flex items-start justify-between mb-3">
-                <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Building2 size={18} className="text-indigo-600" />
+                <div className="w-9 h-9 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Building2 size={16} className="text-indigo-600" />
                 </div>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex gap-1">
                   <button onClick={() => { setEditing(company); setShowForm(true) }} className="text-gray-400 hover:text-indigo-600 p-1 rounded transition-colors">
                     <Pencil size={14} />
                   </button>
@@ -229,7 +214,9 @@ export default function CompaniesPage() {
                 </div>
               </div>
               <h3 className="font-semibold text-gray-900 text-sm mb-1">{company.name}</h3>
-              {company.sector && <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{company.sector}</span>}
+              {company.sector && (
+                <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{company.sector}</span>
+              )}
               <div className="mt-3 space-y-1.5">
                 {company.location && (
                   <div className="flex items-center gap-1.5 text-xs text-gray-400">
@@ -242,7 +229,9 @@ export default function CompaniesPage() {
                   </a>
                 )}
               </div>
-              {company.notes && <p className="text-xs text-gray-400 mt-3 line-clamp-2">{company.notes}</p>}
+              {company.notes && (
+                <p className="text-xs text-gray-400 mt-3 line-clamp-2">{company.notes}</p>
+              )}
             </div>
           ))}
         </div>
