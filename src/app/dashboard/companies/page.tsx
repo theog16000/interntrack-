@@ -5,6 +5,7 @@ import { Company } from '@/lib/types'
 import { Plus, Search, Building2, Globe, MapPin, Pencil, Trash2, X, ChevronDown } from 'lucide-react'
 import { ToastContainer } from '@/components/Toast'
 import { useToast } from '@/lib/useToast'
+import Loader from '@/components/Loader'
 import ConfirmModal from '@/components/ConfirmModal'
 
 const inputClass = "w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white"
@@ -151,11 +152,7 @@ export default function CompaniesPage() {
     c.location?.toLowerCase().includes(search.toLowerCase())
   )
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <p className="text-gray-400 text-sm">Chargement...</p>
-    </div>
-  )
+if (loading) return <Loader />
 
   return (
     <div className="p-4 md:p-8">

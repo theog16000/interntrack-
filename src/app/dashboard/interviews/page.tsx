@@ -6,6 +6,7 @@ import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
+import Loader from '@/components/Loader'
 import frLocale from '@fullcalendar/core/locales/fr'
 import {
   Plus, CalendarCheck, Clock, Briefcase,
@@ -238,8 +239,7 @@ export default function InterviewsPage() {
       hour: '2-digit', minute: '2-digit'
     })
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><p className="text-gray-400 text-sm">Chargement...</p></div>
-
+if (loading) return <Loader />
   return (
     <div className="p-4 md:p-8">
 

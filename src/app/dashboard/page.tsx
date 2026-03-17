@@ -7,7 +7,7 @@ import { CalendarCheck, Send, ClipboardList, Trophy, Settings, LogOut } from 'lu
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { signOut } from '@/app/(auth)/actions'
-
+import Loader from '@/components/Loader'
 const STATUS_CONFIG = {
   to_apply:  { label: 'À postuler', color: '#6366f1' },
   sent:      { label: 'Envoyé',     color: '#3b82f6' },
@@ -69,13 +69,7 @@ export default function DashboardPage() {
     router.push('/login')
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-400 text-sm">Chargement...</p>
-      </div>
-    )
-  }
+  if (loading) return <Loader />
 
   return (
     <div className="p-4 md:p-8">

@@ -7,7 +7,7 @@ import { ToastContainer } from '@/components/Toast'
 import { useToast } from '@/lib/useToast'
 import DocumentViewer from '@/components/DocumentViewer'
 import ConfirmModal from '@/components/ConfirmModal'
-
+import Loader from '@/components/Loader'
 const FILE_TYPE_CONFIG = {
   cv:           { label: 'CV',               icon: FileBadge,  className: 'bg-indigo-50 text-indigo-600' },
   cover_letter: { label: 'Lettre de motiv.', icon: FileText,   className: 'bg-blue-50 text-blue-600'    },
@@ -86,11 +86,7 @@ export default function DocumentsPage() {
   const formatDate = (s: string) => new Date(s).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
   const formatExt  = (name: string) => name.split('.').pop()?.toUpperCase() ?? 'FILE'
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <p className="text-gray-400 text-sm">Chargement...</p>
-    </div>
-  )
+ if (loading) return <Loader />
 
   return (
     <div className="p-4 md:p-8">

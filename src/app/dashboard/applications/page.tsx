@@ -8,6 +8,7 @@ import ConfirmModal from '@/components/ConfirmModal'
 import { Plus, LayoutGrid, List, ArrowUpDown, Pencil, Trash2, ChevronUp, ChevronDown } from 'lucide-react'
 import { ToastContainer } from '@/components/Toast'
 import { useToast } from '@/lib/useToast'
+import Loader from '@/components/Loader'
 
 type SortKey = 'created_at' | 'company_name' | 'applied_at'
 type View = 'kanban' | 'list'
@@ -129,13 +130,7 @@ export default function ApplicationsPage() {
     setDragOverCol(null)
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-400 text-sm">Chargement...</p>
-      </div>
-    )
-  }
+  if (loading) return <Loader />
 
   return (
     <div className="p-4 md:p-8">
