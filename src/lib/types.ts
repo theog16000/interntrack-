@@ -15,6 +15,8 @@ export type Application = {
   created_at: string
   updated_at: string
   company_id?: string
+  remind_at?:   string | null
+reminded_at?: string | null
 }
 
 export type Company = {
@@ -68,3 +70,13 @@ export const INTERVIEW_TYPES: { id: InterviewType; label: string }[] = [
   { id: 'technical', label: 'Technique' },
   { id: 'hr',        label: 'RH'        },
 ]
+
+export type Notification = {
+  id: string
+  user_id: string
+  title: string
+  message: string
+  link: string | null
+  read: boolean
+  created_at: string
+}

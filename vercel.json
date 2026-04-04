@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/relances?secret=Mamantheo86_",
+      "schedule": "0 9 * * *"
+    }
+  ]
+}

@@ -11,8 +11,17 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr">
-      <body className={geist.className}>
+    <html lang="fr" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `
+          try {
+            if (localStorage.getItem('dark-mode') === 'true') {
+              document.documentElement.classList.add('dark')
+            }
+          } catch {}
+        `}} />
+      </head>
+      <body className={`${geist.className} bg-white dark:bg-gray-950 transition-colors`}>
         {children}
       </body>
     </html>
