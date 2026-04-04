@@ -49,8 +49,8 @@ for (const app of applications) {
 
   // 2. Envoie un email via Resend
   await resend.emails.send({
-    from:    'InternTrack <relances@interntrack.app>',
-    to:      userEmail,
+  from: 'InternTrack <onboarding@resend.dev>',
+  to:   'theogenty8@gmail.com',  // ← ton email exact du compte Resend
     subject: `Relance ta candidature chez ${app.company_name}`,
     html: `
       <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 24px;">
